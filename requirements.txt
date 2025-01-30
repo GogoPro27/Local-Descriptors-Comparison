@@ -1,0 +1,6 @@
+opencv-contrib-python
+seaborn
+numpy~=1.26.4
+matplotlib~=3.9.2
+jupyter
+opencv-python~=4.10.0.84
