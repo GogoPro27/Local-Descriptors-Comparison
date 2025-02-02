@@ -1,5 +1,4 @@
 import cv2
-import numpy as np
 
 def match_features(desc1, desc2, method="bf", ratio_test=True):
     """
@@ -13,34 +12,14 @@ def match_features(desc1, desc2, method="bf", ratio_test=True):
     if desc1 is None or desc2 is None:
         return []
 
-    # Претвори во float32 ако користиш FLANN за небинарни дескриптори
-    if method == "flann" and desc1.dtype != np.float32:
-        desc1 = desc1.astype(np.float32)
-        desc2 = desc2.astype(np.float32)
-
     if method == "bf":
-        # За бинарни дескриптори како ORB, BRIEF, BRISK, користи NORM_HAMMING
-        # За SIFT, RootSIFT, KAZE, AKAZE, користи NORM_L2
         norm_type = cv2.NORM_HAMMING
-        # Хевристика: ако димензијата > 32, веројатно не е бинарен дескриптор
         if desc1.shape[1] > 32:
             norm_type = cv2.NORM_L2
         bf = cv2.BFMatcher(norm_type, crossCheck=False)
-        # k=2 значи дека секоја карактеристика во desc1 ќе се совпаѓа со двете најдобри во desc2
         matches = bf.knnMatch(desc1, desc2, k=2)
-
-    elif method == "flann":
-        # За бинарни дескриптори можеш да користиш FLANN со LSH индекс,
-        # но за SIFT можеме да користиме KDTree (или HierarchicalClustering).
-        # Ќе претпоставиме SIFT/RootSIFT => KDTree
-
-        FLANN_INDEX_KDTREE = 1
-        index_params = dict(algorithm=FLANN_INDEX_KDTREE, trees=5)
-        search_params = dict(checks=50)
-        flann = cv2.FlannBasedMatcher(index_params, search_params)
-        matches = flann.knnMatch(desc1, desc2, k=2)
     else:
-        raise ValueError(f"Unknown matching method: {method}")
+        raise ValueError(f"Непознат метод: {method}")
 
     good_matches = []
     if ratio_test:
@@ -49,7 +28,6 @@ def match_features(desc1, desc2, method="bf", ratio_test=True):
             if m.distance < ratio_thresh * n.distance:
                 good_matches.append(m)
     else:
-        # Ако не се користи ratio test, само спој ги сите совпаѓања
         for m, n in matches:
             good_matches.append(m)
 
